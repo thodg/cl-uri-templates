@@ -1,12 +1,46 @@
-For more information about uri-template, see the project homepage:
-http://common-lisp.net/project/uri-template/
+PROJECT
+-------
 
-The uri-template mailing list is uri-template-devel@common-lisp.net.
-Any questions, bug reports and patches are welcome. You can subscribe
-by visiting:
-http://common-lisp.net/cgi-bin/mailman/listinfo/uri-template-devel
+CL-URI-TEMPLATES aims to be a extensive Common-Lisp implementation
+of the URI-Templates draft proposed to the W3C and already showing
+increased use across the web.
 
-The author, Vladimir Sedach, can be contacted at vsedach@gmail.com.
+It is currently developped by Thomas de Grivel <billitch@gmail.com>
+at http://github.com/billitch/cl-uri-templates .
+
+
+FORK
+----
+
+This package is a fork from uri-template written by Vladimir Sedach.
+
+My goal is to contribute the missing operator parsers, and
+further extend the URI deconstruction with these same operators.
+
+
+PROGRESS
+--------
+
+Although operators are missing, variable substitution works fine
+for interpolation and destructuring URIs.
+
+Please report any bug you encounter, test cases and patches are also
+highly appreciated.
+
+
+REFERENCE
+---------
+
+This implementation is based on the URI-Templates draft proposed by
+Joe Gregorio to the W3C. You can get it from the project page at
+http://bitworking.org/projects/URI-Templates/
+
+For more information about the original uri-template package by
+Vladimir Sedach, see http://common-lisp.net/project/uri-template/ .
+
+
+LICENSE
+-------
 
 For license and copyright information (BSD), see the file COPYING
 included with the distribution.

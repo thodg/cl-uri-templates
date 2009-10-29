@@ -1,6 +1,17 @@
-(in-package "URI-TEMPLATE")
+;;  cl-uri-templates
+;;  Extensive URI-Templates implementation in Common-Lisp.
+;;
+;;  Copyright 2009 Thomas de Grivel <billitch@gmail.com>
+;;  Copyright (c) 2007, 2008, 2009 Vladimir Sedach
+;;
+;;  This software is provided "AS IS".
+;;  Please see COPYING for details.
+
+(in-package #:cl-uri-templates)
+
 
 (defvar *encode-uri-string* t)
+
 
 (defun read-uri-template (stream &optional recursive-p)
   (let ((*readtable* (copy-readtable))
@@ -22,17 +33,20 @@
               finally (unread-char next-char stream) (collect-string)))
       (reverse token-accumulator))))
 
+
 (defun maybe-uri-encode (x)
   (if *encode-uri-string* (kmrcl:encode-uri-string (princ-to-string x)) x))
 
 #+parenscript (parenscript:defpsmacro maybe-uri-encode (x)
                 (if *encode-uri-string* `(encode-u-r-i-component ,x) x))
 
+
 (defun uri-template (&rest template-args)
   (format nil "~{~A~}" template-args))
 
 #+parenscript (parenscript:defpsmacro uri-template (&rest template-args)
                 `(+ ,@template-args))
+
 
 (defun enable-uri-template-syntax ()
   (set-dispatch-macro-character #\# #\U

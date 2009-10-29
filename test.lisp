@@ -1,11 +1,31 @@
-(in-package "URI-TEMPLATE.TEST")
+;;  cl-uri-templates
+;;  Extensive URI-Templates implementation in Common-Lisp.
+;;
+;;  Copyright 2009 Thomas de Grivel <billitch@gmail.com>
+;;  Copyright (c) 2007, 2008, 2009 Vladimir Sedach
+;;
+;;  This software is provided "AS IS".
+;;  Please see COPYING for details.
+
+(in-package #:cl-user)
+
+(defpackage #:cl-uri-templates.test
+  (:use #:common-lisp #:cl-uri-templates)
+  (:export #:run-tests
+           #:run-interpolation-tests
+           #:run-destructuring-tests))
+
+(in-package #:cl-uri-templates.test)
+
 
 #.(enable-uri-template-syntax)
+
 
 (defun run-tests ()
   (run-interpolation-tests)
   (run-destructuring-tests))
   
+
 (defun run-interpolation-tests ()
   (let ((baz 1)
         (bar "bar"))
@@ -18,6 +38,7 @@
     (assert (string= #Uhttp://www.foo.com/bar?foo={"^BAZ"}
                      "http://www.foo.com/bar?foo=%5EBAZ"))))
 
+
 (defun run-destructuring-tests ()
   (assert (equal (uri-template-bind (#Uhttp://www.factory.com/orders/{part}/{(#'parse-integer number)})
                      "http://www.factory.com/orders/widget/1234"
@@ -27,7 +48,7 @@
                      "https://www.google.com/dir/1/2/search.html?arg=0-a&arg1=1-b&amp;arg3-c#hash"
                    (list %uri-scheme %uri-host %uri-path %uri-directory %uri-file %uri-query %uri-fragment))
                  '("https" "www.google.com" "/dir/1/2/search.html" "/dir/1/2/" "search.html" "arg=0-a&arg1=1-b&amp;arg3-c" "hash")))
-  (assert (equal (uri-template:uri-template-bind (#U/apps/{app-name}/{table-template}/{table-id})
+  (assert (equal (uri-template-bind (#U/apps/{app-name}/{table-template}/{table-id})
                      "/apps/EVWeb/Fixed%20Cost/20"
                    (list app-name table-template table-id))
                  '("EVWeb" "Fixed Cost" "20")))
@@ -53,4 +74,3 @@
                          %uri-authority (list %uri-user %uri-host %uri-port)
                          %uri-path (list %uri-directory %uri-file) %uri-query %uri-fragment))
                  '(NIL "/foo/bar" NIL NIL (NIL NIL NIL) "/foo/bar" ("/foo/" "bar") NIL NIL))))
-

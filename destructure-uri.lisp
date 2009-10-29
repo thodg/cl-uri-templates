@@ -1,6 +1,17 @@
-(in-package "URI-TEMPLATE")
+;;  cl-uri-templates
+;;  Extensive URI-Templates implementation in Common-Lisp.
+;;
+;;  Copyright 2009 Thomas de Grivel <billitch@gmail.com>
+;;  Copyright (c) 2007, 2008, 2009 Vladimir Sedach
+;;
+;;  This software is provided "AS IS".
+;;  Please see COPYING for details.
+
+(in-package #:cl-uri-templates)
+
 
 (defvar *decode-uri-string* t)
+
 
 ;; RFC 2396 standard URI components
 (defvar %uri-scheme)
@@ -8,6 +19,7 @@
 (defvar %uri-path)
 (defvar %uri-query)
 (defvar %uri-fragment)
+
 
 ;; extended URI components
 (defvar %uri-head)
@@ -17,6 +29,7 @@
 (defvar %uri-port)
 (defvar %uri-directory)
 (defvar %uri-file)
+
 
 (defmacro bind-authority-components (authority &body body)
   (let ((t1 (gensym)) (t2 (gensym)))
@@ -30,6 +43,7 @@
        (declare (ignore ,t1 ,t2))
        ,@body)))
 
+
 (defmacro bind-path-components (path &body body)
   `(destructuring-bind (&optional %uri-directory %uri-file)
        (coerce
@@ -39,6 +53,7 @@
                                    ,path))
         'list)
      ,@body))
+
 
 (defmacro bind-standard-uri-components (uri-reference &body body)
   (let ((t1 (gensym)) (t2 (gensym)) (t3 (gensym)) (t4 (gensym)))
@@ -56,6 +71,7 @@
        (bind-authority-components %uri-authority
          (bind-path-components %uri-path
            ,@body)))))
+
 
 (defmacro uri-template-bind ((template) uri &body body)
   "Binds URI template placeholders (which must be either symbols or
