@@ -1,0 +1,25 @@
+0.8:
+----
+* Added %uri-head and %uri-tail convenience parameters (thanks to Roman Zaharof for the patch).
+
+0.7:
+----
+* Fixed bugs in standard-uri-components regular expression (thanks to Roman Zaharof for the bug report).
+
+0.6:
+----
+* Changed uri-template-bind lambda-list to resemble that of destructuring-bind
+
+0.5:
+----
+* Added option to do URI decoding in URI template destructuring (on by default)
+
+0.4:
+----
+* Fixed bug where strings inserted into templates were not being URI encoded
+
+0.3:
+----
+* Added URI encoding support for template interpolation. URI encoding is controlled by the *encode-uri-string* flag
+* Added interpolation support for Parenscript
+* Added URI template destructuring
