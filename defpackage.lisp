@@ -18,6 +18,7 @@
    ;; interpolation
    #:enable-uri-template-syntax
    #:read-uri-template
+   #:parse-uri-template
    #:*encode-uri-string*
    
    ;; destructuring
@@ -37,3 +38,14 @@
    #:%uri-port
    #:%uri-directory
    #:%uri-file))
+
+
+(defpackage #:cl-uri-templates.operators
+  (:use #:common-lisp #:cl-ppcre)
+  (:export
+   #:-opt
+   #:-neg
+   #:-prefix
+   #:-suffix
+   #:-join
+   #:-list))

@@ -19,5 +19,6 @@
   :serial t
   :components ((:file "defpackage")
                (:file "uri-template")
+               (:file "operators")
                (:file "destructure-uri"))
   :depends-on (:kmrcl :cl-ppcre))
