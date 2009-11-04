@@ -15,11 +15,24 @@
 (declaim (optimize (debug 3)))
 
 
-(define-condition expansion-error (reader-error)
-  ((last-arg :initarg :last-arg :reader last-arg-of :initform nil))
+(define-condition invalid-uri-warning (warning)
+  ((message :initarg :message
+            :initform "Invalid URI-Template"
+            :reader message-of))
   (:report (lambda (condition stream)
-             (format stream "Invalid URI expansion near ~A."
-                     (last-arg-of condition)))))
+             (write-string (message-of condition) stream))))
+
+
+(define-condition invalid-uri-error (reader-error)
+  ((message :initarg :message
+            :initform "Invalid URI-Template"
+            :reader message-of))
+  (:report (lambda (condition stream)
+             (write-string (message-of condition) stream))))
+
+
+(defmacro check-uri (test condition fmt &rest arguments)
+  `(assert ,test () ',condition :message (format nil ,fmt ,@arguments)))
 
 
 (defmacro define-reader (name &key allowed-char valid-next-char eat-next-char
@@ -56,9 +69,10 @@
                                                 `((unread-char ,char ,stream))))
                                  'string)))
            ,@(when valid-next-char
-                   `((assert ,(char-predicate valid-next-char next-char)
-                             () "Next char ~A is invalid after ~A."
-                             ,next-char ,result)))
+                   `((check-uri ,(char-predicate valid-next-char next-char)
+                                invalid-uri-error
+                                "Next char ~S is invalid after ~S."
+                                ,next-char ,result)))
            ,@(when valid-result
                    `((funcall ,valid-result ,result)))
            ,result)))))
@@ -72,14 +86,20 @@
     :eat-next-char t)
 
 
-(defconstant +uri-reserved-chars+ ";/?:@&=+$,")
+(defmacro define-constant (name value &key (test 'equal))
+  (unless (and (boundp name)
+               (funcall test value (symbol-value name)))
+    `(defconstant ,name ,value)))
+
+
+(define-constant +uri-reserved-chars+ ";/?:@&=+$,")
 
 
 (defun uri-reserved-char-p (char)
   (find char +uri-reserved-chars+))
 
 
-(defconstant +uri-mark-chars+ "-_.!~*'()")
+(define-constant +uri-mark-chars+ "-_.!~*'()")
 
 
 (defun uri-unreserved-char-p (char)
@@ -105,9 +125,9 @@
                         (find char "._-")))
     :valid-next-char "=,}"
     :valid-result (lambda (result)
-                    (assert (and (> (length result) 0)
-                                 (alphanumericp (char result 0)))
-                            () "Invalid variable name : ~A. ~
+                    (check-uri (and (> (length result) 0)
+                                       (alphanumericp (char result 0)))
+                            () "Invalid variable name : ~S. ~
                                 Variable names must start with alphanum."
                             result)))
 
@@ -127,10 +147,11 @@
 
 (defun read-var (stream)
   (declare (type stream stream))
-  (let ((name (intern (string-upcase (read-varname stream)))))
-    (if (eat-char stream #\=)
-        (cons name (read-vardefault stream))
-        name)))
+  (let* ((name (intern (string-upcase (read-varname stream)))))
+    `(or (ignore-errors ,name)
+         ,(if (eat-char stream #\=)
+              (read-vardefault stream)
+              ""))))
 
 
 (defun read-vars (stream)
@@ -140,25 +161,29 @@
      for next-char = (peek-char nil stream)
      collect var
      while (char= #\, next-char)
-     finally (assert (char= #\} (read-char stream))
-               () "Invalid URI expansion vars near ~A" var)))
+     finally (check-uri (char= #\} (read-char stream))
+                        invalid-uri-error
+                        "Invalid URI expansion vars near ~S"
+                        var)))
 
 
 (defun intern-op (name)
   (let ((-name (concatenate 'string "-" (string-upcase name))))
-    (assert (find-symbol -name 'cl-uri-templates.operators)
-            () "~A is not a valid operator for URI expansion" -name)
+    (check-uri (find-symbol -name 'cl-uri-templates.operators)
+               invalid-uri-error
+               "~A is not a valid operator for URI expansion"
+               -name)
     (intern -name 'cl-uri-templates.operators)))
 
 
 (defun read-operator (stream)
   (declare (type stream stream))
-  (assert (char= #\- (read-char stream)))
+  (check-uri (char= #\- (read-char stream))
+             invalid-uri-error "operator must start with '-'.")
   (append (list (intern-op (read-op stream))
                 (read-arg stream))
           (read-vars stream)))
 
-(untrace read-expansion read-operator read-vars read-var read-vardefault read-varname read-arg read-op char=)
 
 (defun read-expansion (stream)
   (declare (type stream stream))
@@ -184,6 +209,7 @@
               (#\{ (collect-string)
                    (push (read-expansion stream)
                          token-accumulator))
+              (#\})
               (t (push next-char string-accumulator)))
          finally
            (unread-char next-char stream)
@@ -191,10 +217,11 @@
       (reverse token-accumulator))))
 
 
-(defun parse-uri-template (str)
+(defmacro parse-uri-template (str)
   (declare (type string str))
   (with-input-from-string (stream str)
-    (read-uri-template stream)))
+    (cons 'cl-uri-templates:uri-template
+          (read-uri-template stream))))
 
 
 (defun maybe-uri-encode (x)

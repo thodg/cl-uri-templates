@@ -15,6 +15,10 @@
    ;; common
    #:uri-template
 
+   ;; exceptions
+   #:invalid-uri-warning
+   #:invalid-uri-error
+
    ;; interpolation
    #:enable-uri-template-syntax
    #:read-uri-template

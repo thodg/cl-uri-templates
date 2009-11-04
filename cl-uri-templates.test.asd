@@ -16,4 +16,4 @@
 
 (defsystem #:cl-uri-templates.test
     :components ((:file "test"))
-    :depends-on (:cl-uri-templates))
+    :depends-on (#:FiveAM #:cl-uri-templates))

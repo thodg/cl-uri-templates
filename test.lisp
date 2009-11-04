@@ -10,7 +10,7 @@
 (in-package #:cl-user)
 
 (defpackage #:cl-uri-templates.test
-  (:use #:common-lisp #:cl-uri-templates)
+  (:use #:common-lisp #:cl-uri-templates #:FiveAM)
   (:export #:run-tests
            #:run-interpolation-tests
            #:run-destructuring-tests))
@@ -18,59 +18,88 @@
 (in-package #:cl-uri-templates.test)
 
 
-#.(enable-uri-template-syntax)
+(defmacro define-fixture (name args &body body)
+  `(handler-case
+       (def-fixture ,name ,args ,body)
+     (warning nil)))
 
 
-(defun run-tests ()
-  (run-interpolation-tests)
-  (run-destructuring-tests))
-  
+(def-suite all-tests)
 
-(defun run-interpolation-tests ()
+
+(def-suite expansion-tests
+    :description "Test URI-Templates expansions."
+    :in all-tests)
+
+
+(in-suite expansion-tests)
+
+
+(define-fixture uri-template-syntax ()
+  (let ((*readtable* (copy-readtable nil)))
+    (enable-uri-template-syntax)
+    (&body)))
+
+
+(defun eval-read (string)
+  (eval (read-from-string string)))
+
+
+(test read-macro
+  (with-fixture uri-template-syntax ()
+    (is-true (read-from-string "#U"))
+    (is (string= "" (eval-read "#U")))
+    (is (string= "/" (eval-read "#U/")))
+    (is (string= "" (eval-read "#U ")))
+    (is (string= "a" (eval-read "#Ua ")))
+    (is (string= "abc" (eval-read "#Uabc ")))
+    (is (string= "a/b:c" (eval-read "#Ua/b:c")))
+    (is (string= "%12" (eval-read "#U%12")))
+    (is (string= "a%12/b:c" (eval-read "#Ua%12/b:c")))
+    (signals (end-of-file) (eval-read "#U{"))
+    (signals (end-of-file) (eval-read "#U{a"))
+    (signals (end-of-file) (eval-read "#U{-"))
+    (signals (end-of-file) (eval-read "#U{-a"))
+    (signals (reader-error) (eval-read "#U<>"))
+    (signals (invalid-uri-error) (eval-read "#U{-a|b|c=,}"))
+    (signals (invalid-uri-error) (eval-read "#U{%"))
+    (signals (invalid-uri-warning) (eval-read "#Uaa}"))
+    (signals (invalid-uri-warning) (eval-read "#U<>"))
+    (signals (invalid-uri-warning) (eval-read "#U%"))
+    (signals (invalid-uri-warning) (eval-read "#U%1"))
+    (signals (invalid-uri-warning) (eval-read "#U%1g"))
+    (signals (invalid-uri-warning) (eval-read "#U%a"))
+    (signals (invalid-uri-warning) (eval-read "#U%ag"))
+    (signals (invalid-uri-warning) (eval-read "#U%ga"))
+    (signals (invalid-uri-warning) (eval-read "#U%gg"))))
+
+
+(define-fixture some-variables ()
   (let ((baz 1)
         (bar "bar"))
-    (assert (string= #Uhttp://www.foo.com/bar/{baz}
-                     "http://www.foo.com/bar/1"))
-    (assert (string= #Uhttp://www.foo.com/bar/{bar}/{baz}
-                     "http://www.foo.com/bar/bar/1"))
-    (assert (string= #Uhttp://www.foo.com/bar/{bar}{baz}
-                     "http://www.foo.com/bar/bar1"))
-    (assert (string= #Uhttp://www.foo.com/bar?foo={"^BAZ"}
-                     "http://www.foo.com/bar?foo=%5EBAZ"))))
+    (declare (ignorable bar baz))
+    (&body)))
 
 
-(defun run-destructuring-tests ()
-  (assert (equal (uri-template-bind (#Uhttp://www.factory.com/orders/{part}/{(#'parse-integer number)})
-                     "http://www.factory.com/orders/widget/1234"
-                   (list part number %uri-host))
-                 '("widget" 1234 "www.factory.com")))
-  (assert (equal (bind-standard-uri-components
-                     "https://www.google.com/dir/1/2/search.html?arg=0-a&arg1=1-b&amp;arg3-c#hash"
-                   (list %uri-scheme %uri-host %uri-path %uri-directory %uri-file %uri-query %uri-fragment))
-                 '("https" "www.google.com" "/dir/1/2/search.html" "/dir/1/2/" "search.html" "arg=0-a&arg1=1-b&amp;arg3-c" "hash")))
-  (assert (equal (uri-template-bind (#U/apps/{app-name}/{table-template}/{table-id})
-                     "/apps/EVWeb/Fixed%20Cost/20"
-                   (list app-name table-template table-id))
-                 '("EVWeb" "Fixed Cost" "20")))
-  (assert (equal (bind-standard-uri-components
-                     "http://files3.dsv.data.cod.ru/?WyIyNWQ3NWU5NTRmZDU1MWIzYmQ5NzVjNzJhZjRkZmNhZSIsMTI1MTA5NjMxNCwiXHUwNDEwXHUwNDNiXHUwNDRjXHUwNDRmXHUwNDNkXHUwNDQxIFx1MDQ0MVx1MDQzNVx1MDQ0MFx1MDQzZVx1MDQzYVx1MDQ0MFx1MDQ0Ylx1MDQzYlx1MDQ0Ylx1MDQ0NS5yYXIiLCJrTzNqSUo3bUN5WlBPenlBVGdcL0M3UkZVWHdXYkN6SWtEYzUweTl5a1lOVCtTRmlwVFdsN1UxWlVybGVLNjMyaGlYc0hvVDhGZitGWUt6eGVVRGxOVkxUN3R0MndLYjg4VGFjYmZSVnhrZjNYQXdZalpYemVEQXM4bmxzK0RCbnZEcnZQTmRMKytDS05pNjVJXC8yb2JnY0N1RmdyK1lpS0VSak8rNVZSeTIrcz0iXQ%3D%3D"
-                   (list %uri-scheme %uri-authority %uri-path %uri-directory %uri-file %uri-query %uri-fragment))
-                 '("http" "files3.dsv.data.cod.ru" "/" "/" nil "WyIyNWQ3NWU5NTRmZDU1MWIzYmQ5NzVjNzJhZjRkZmNhZSIsMTI1MTA5NjMxNCwiXHUwNDEwXHUwNDNiXHUwNDRjXHUwNDRmXHUwNDNkXHUwNDQxIFx1MDQ0MVx1MDQzNVx1MDQ0MFx1MDQzZVx1MDQzYVx1MDQ0MFx1MDQ0Ylx1MDQzYlx1MDQ0Ylx1MDQ0NS5yYXIiLCJrTzNqSUo3bUN5WlBPenlBVGdcL0M3UkZVWHdXYkN6SWtEYzUweTl5a1lOVCtTRmlwVFdsN1UxWlVybGVLNjMyaGlYc0hvVDhGZitGWUt6eGVVRGxOVkxUN3R0MndLYjg4VGFjYmZSVnhrZjNYQXdZalpYemVEQXM4bmxzK0RCbnZEcnZQTmRMKytDS05pNjVJXC8yb2JnY0N1RmdyK1lpS0VSak8rNVZSeTIrcz0iXQ%3D%3D" nil)))
-  (assert (equal (bind-standard-uri-components
-                     "http://www.foo.com/abc?bar=baz&xyz=1"
-                   (list %uri-scheme %uri-host %uri-path %uri-directory %uri-file %uri-query %uri-fragment %uri-head %uri-tail))
-                 '("http" "www.foo.com" "/abc" "/" "abc" "bar=baz&xyz=1" nil "http://www.foo.com" "/abc?bar=baz&xyz=1")))
-  (assert (equal (bind-standard-uri-components
-                     "http://www.foo.com/?bar=baz&xyz=1"
-                   (list %uri-scheme %uri-host %uri-path %uri-directory %uri-file %uri-query %uri-fragment))
-                 '("http" "www.foo.com" "/" "/" nil "bar=baz&xyz=1" nil)))
-  (assert (equal (bind-standard-uri-components "http://user@host.com:8080/dir1/dir2/file?query=want&a=b#hash"
-                   (list %uri-scheme %uri-authority (list %uri-user %uri-host %uri-port)
-                         %uri-path (list %uri-directory %uri-file) %uri-query %uri-fragment))
-                 '("http" "user@host.com:8080" ("user" "host.com" "8080") "/dir1/dir2/file"
-                   ("/dir1/dir2/" "file") "query=want&a=b" "hash")))
-  (assert (equal (bind-standard-uri-components "/foo/bar"
-                   (list %uri-head %uri-tail %uri-scheme
-                         %uri-authority (list %uri-user %uri-host %uri-port)
-                         %uri-path (list %uri-directory %uri-file) %uri-query %uri-fragment))
-                 '(NIL "/foo/bar" NIL NIL (NIL NIL NIL) "/foo/bar" ("/foo/" "bar") NIL NIL))))
+(test variable-expansion
+  "Test variable expansion"
+  (is (string= "http://www.foo.com/bar/1"
+               (let ((baz 1))
+                 (parse-uri-template "http://www.foo.com/bar/{baz}"))))
+  (is (string= "http://www.foo.com/bar/bar/1"
+               (let ((bar "bar")
+                     (baz 1))
+                 (parse-uri-template "http://www.foo.com/bar/{bar}/{baz}"))))
+  (is (string= "http://www.foo.com/bar/bar1"
+               (let ((bar "bar")
+                     (baz 1))
+                 (parse-uri-template "http://www.foo.com/bar/{bar}{baz}"))))
+  (with-fixture uri-template-syntax ()
+    (is (string= "http://www.foo.com/bar/1"
+                   (eval-read "(let ((baz 1))
+                                 #Uhttp://www.foo.com/bar/{baz})")))))
+
+
+(with-open-file (*standard-output* "test.output" :direction :output
+                                   :if-exists :supersede)
+  (time (run! 'all-tests)))
