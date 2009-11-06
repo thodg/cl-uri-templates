@@ -87,9 +87,10 @@
 
 
 (defmacro define-constant (name value &key (test 'equal))
-  (unless (and (boundp name)
+  (unless (and (constantp name)
                (funcall test value (symbol-value name)))
-    `(defconstant ,name ,value)))
+    `(eval-when (:compile-toplevel)
+       (defconstant ,name ,value))))
 
 
 (define-constant +uri-reserved-chars+ ";/?:@&=+$,")

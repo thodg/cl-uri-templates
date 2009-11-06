@@ -19,9 +19,10 @@
 
 
 (defmacro define-fixture (name args &body body)
-  `(handler-case
-       (def-fixture ,name ,args ,body)
-     (warning nil)))
+  `(eval-when (:compile-toplevel)
+     (handler-case
+         (def-fixture ,name ,args ,@body)
+       (warning nil))))
 
 
 (def-suite all-tests)
@@ -96,7 +97,7 @@
                  (parse-uri-template "http://www.foo.com/bar/{bar}{baz}"))))
   (with-fixture uri-template-syntax ()
     (is (string= "http://www.foo.com/bar/1"
-                   (eval-read "(let ((baz 1))
+                 (eval-read "(let ((baz 1))
                                  #Uhttp://www.foo.com/bar/{baz})")))))
 
 
