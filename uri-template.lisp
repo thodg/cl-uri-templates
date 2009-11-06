@@ -17,18 +17,23 @@
 
 (define-condition invalid-uri-warning (warning)
   ((message :initarg :message
-            :initform "Invalid URI-Template"
+            :initform "Invalid URI"
             :reader message-of))
   (:report (lambda (condition stream)
              (write-string (message-of condition) stream))))
 
 
-(define-condition invalid-uri-error (reader-error)
+(define-condition invalid-expansion-error (reader-error)
   ((message :initarg :message
-            :initform "Invalid URI-Template"
+            :initform "Invalid URI-Template expansion"
             :reader message-of))
   (:report (lambda (condition stream)
              (write-string (message-of condition) stream))))
+
+
+(define-condition invalid-op-error (invalid-expansion-error) ())
+(define-condition invalid-arg-error (invalid-expansion-error) ())
+(define-condition invalid-var-error (invalid-expansion-error) ())
 
 
 (defmacro check-uri (test condition fmt &rest arguments)
@@ -36,7 +41,7 @@
 
 
 (defmacro define-reader (name &key allowed-char valid-next-char eat-next-char
-                         valid-result)
+                         valid-result (condition-type invalid-expansion-error))
   "Reads string from STREAM of characters satisfying ALLOWED-CHAR-SPEC.
    Next char in stream will satisfy VALID-NEXT-CHAR-SPEC and
    is eaten when EAT-NEXT-CHAR is non-nil.
@@ -70,7 +75,7 @@
                                  'string)))
            ,@(when valid-next-char
                    `((check-uri ,(char-predicate valid-next-char next-char)
-                                invalid-uri-error
+                                ,condition-type
                                 "Next char ~S is invalid after ~S."
                                 ,next-char ,result)))
            ,@(when valid-result
@@ -83,6 +88,7 @@
     :valid-next-char #\|
     :valid-result (lambda (result)
                     (> (length result) 0))
+    :condition-type invalid-op-error
     :eat-next-char t)
 
 
@@ -116,6 +122,7 @@
                         (uri-reserved-char-p char)
                         (char= char #\%)))
     :valid-next-char #\|
+    :condition-type invalid-op-error
     :eat-next-char t)
 
 
@@ -128,10 +135,11 @@
     :valid-result (lambda (result)
                     (check-uri (and (> (length result) 0)
                                        (alphanumericp (char result 0)))
-                            invalid-uri-error
+                            invalid-var-error
                             "Invalid variable name : ~S. ~
                              Variable names must start with alphanum."
-                            result)))
+                            result))
+    :condition-type invalid-var-error)
 
 
 (define-reader read-vardefault
@@ -139,7 +147,8 @@
                     (declare (type character char))
                     (or (uri-unreserved-char-p char)
                         (char= char #\%)))
-    :valid-next-char ",}")
+    :valid-next-char ",}"
+    :condition-type invalid-var-error)
 
 
 (defun eat-char (stream char)
@@ -164,7 +173,7 @@
      collect var
      while (char= #\, next-char)
      finally (check-uri (char= #\} (read-char stream))
-                        invalid-uri-error
+                        invalid-var-error
                         "Invalid URI expansion vars near ~S"
                         var)))
 
@@ -172,8 +181,8 @@
 (defun intern-op (name)
   (let ((-name (concatenate 'string "-" (string-upcase name))))
     (check-uri (find-symbol -name 'cl-uri-templates.operators)
-               invalid-uri-error
-               "~A is not a valid operator for URI expansion"
+               invalid-op-error
+               "~A is not a valid operator for URI-Templates"
                -name)
     (intern -name 'cl-uri-templates.operators)))
 
@@ -181,7 +190,8 @@
 (defun read-operator (stream)
   (declare (type stream stream))
   (check-uri (char= #\- (read-char stream))
-             invalid-uri-error "operator must start with '-'.")
+             invalid-op-error
+             "operator must start with '-'.")
   (append (list (intern-op (read-op stream))
                 (read-arg stream))
           (read-vars stream)))

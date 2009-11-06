@@ -62,8 +62,8 @@
     (signals (end-of-file) (eval-read "#U{a"))
     (signals (end-of-file) (eval-read "#U{-"))
     (signals (end-of-file) (eval-read "#U{-a"))
-    (signals (invalid-uri-error) (eval-read "#U{-a|b|c=,}"))
-    (signals (invalid-uri-error) (eval-read "#U{%"))))
+    (signals (invalid-expansion-error) (eval-read "#U{-opt|b|c=,}"))
+    (signals (invalid-expansion-error) (eval-read "#U{%"))))
 
 
 (test (uri-warnings :suite disabled-tests)
@@ -86,28 +86,32 @@
     (&body)))
 
 
-(test invalid-expansions
-  (signals invalid-uri-error (eval '(parse-uri-template "{}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{@}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{{}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{ }")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a@}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a{}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a }")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{@a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{{a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{ a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a@a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a{a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "a{a@a}a")))
-  (signals invalid-uri-error (eval '(parse-uri-template "a{a{a}a")))
-  (signals invalid-uri-error (eval '(parse-uri-template "a{a a}a")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{=}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{={}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{=a}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{|}")))
-  (signals invalid-uri-error (eval '(parse-uri-template "{a={}"))))
+(test invalid-variables
+  (signals invalid-var-error (eval '(parse-uri-template "{}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{@}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{{}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{ }")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a@}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a{}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a }")))
+  (signals invalid-var-error (eval '(parse-uri-template "{@a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{{a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{ a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a@a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a{a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "a{a@a}a")))
+  (signals invalid-var-error (eval '(parse-uri-template "a{a{a}a")))
+  (signals invalid-var-error (eval '(parse-uri-template "a{a a}a")))
+  (signals invalid-var-error (eval '(parse-uri-template "{=}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{={}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{=a}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{|}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{a={}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{.abc}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{+4abc}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{4a:bc}")))
+  (signals invalid-var-error (eval '(parse-uri-template "{abc}{_abc}"))))
 
 
 (test variable-substitution
@@ -118,7 +122,12 @@
   (is (string= "wilma"
                (parse-uri-template "{bar=wilma}")))
   (is (string= ""
-               (parse-uri-template "{baz}")))
+               (parse-uri-template "{baz}{1baz}{123}{1-2}{1-baz}{ba.z_1-2}")))
+  (is (string= "foo..baz.qux."
+               (let ((f.oo_ "foo")
+                     (b-a-r nil)
+                     (b-a.z_ "baz"))
+                 (parse-uri-template "{f.oo_}.{b-a-r}.{b-a.z_=nn}.{4q.-_x=qux}."))))
   (is (string= "http://example.org/?q=fred"
                (let ((bar "fred"))
                  (parse-uri-template "http://example.org/?q={bar}"))))

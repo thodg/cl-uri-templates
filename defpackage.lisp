@@ -17,7 +17,10 @@
 
    ;; exceptions
    #:invalid-uri-warning
-   #:invalid-uri-error
+   #:invalid-expansion-error
+   #:invalid-op-error
+   #:invalid-arg-error
+   #:invalid-var-error
 
    ;; interpolation
    #:enable-uri-template-syntax
