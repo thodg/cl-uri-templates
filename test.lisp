@@ -25,12 +25,13 @@
        (warning nil))))
 
 
-(def-suite all-tests)
+(def-suite disabled-tests)
+(def-suite enabled-tests)
 
 
 (def-suite expansion-tests
     :description "Test URI-Templates expansions."
-    :in all-tests)
+    :in enabled-tests)
 
 
 (in-suite expansion-tests)
@@ -42,8 +43,8 @@
     (&body)))
 
 
-(defun eval-read (string)
-  (eval (read-from-string string)))
+(defmacro eval-read (string)
+  `(eval (read-from-string ,string)))
 
 
 (test read-macro
@@ -61,9 +62,12 @@
     (signals (end-of-file) (eval-read "#U{a"))
     (signals (end-of-file) (eval-read "#U{-"))
     (signals (end-of-file) (eval-read "#U{-a"))
-    (signals (reader-error) (eval-read "#U<>"))
     (signals (invalid-uri-error) (eval-read "#U{-a|b|c=,}"))
-    (signals (invalid-uri-error) (eval-read "#U{%"))
+    (signals (invalid-uri-error) (eval-read "#U{%"))))
+
+
+(test (uri-warnings :suite disabled-tests)
+  (with-fixture uri-template-syntax ()
     (signals (invalid-uri-warning) (eval-read "#Uaa}"))
     (signals (invalid-uri-warning) (eval-read "#U<>"))
     (signals (invalid-uri-warning) (eval-read "#U%"))
@@ -82,8 +86,18 @@
     (&body)))
 
 
-(test variable-expansion
+(test variable-substitution
   "Test variable expansion"
+  (is (string= "fred"
+               (let ((foo "fred"))
+                 (parse-uri-template "{foo}"))))
+  (is (string= "wilma"
+               (parse-uri-template "{bar=wilma}")))
+  (is (string= ""
+               (parse-uri-template "{baz}")))
+  (is (string= "http://example.org/?q=fred"
+               (let ((bar "fred"))
+                 (parse-uri-template "http://example.org/?q={bar}"))))
   (is (string= "http://www.foo.com/bar/1"
                (let ((baz 1))
                  (parse-uri-template "http://www.foo.com/bar/{baz}"))))
@@ -103,4 +117,4 @@
 
 (with-open-file (*standard-output* "test.output" :direction :output
                                    :if-exists :supersede)
-  (time (run! 'all-tests)))
+  (time (run! 'enabled-tests)))
