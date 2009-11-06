@@ -86,11 +86,35 @@
     (&body)))
 
 
+(test invalid-expansions
+  (signals invalid-uri-error (eval '(parse-uri-template "{}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{@}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{{}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{ }")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a@}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a{}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a }")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{@a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{{a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{ a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a@a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a{a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "a{a@a}a")))
+  (signals invalid-uri-error (eval '(parse-uri-template "a{a{a}a")))
+  (signals invalid-uri-error (eval '(parse-uri-template "a{a a}a")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{=}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{={}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{=a}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{|}")))
+  (signals invalid-uri-error (eval '(parse-uri-template "{a={}"))))
+
+
 (test variable-substitution
   "Test variable expansion"
-  (is (string= "fred"
+  (is (string= "fredfredfred"
                (let ((foo "fred"))
-                 (parse-uri-template "{foo}"))))
+                 (parse-uri-template "{foo}{foo=}{foo=wilma}"))))
   (is (string= "wilma"
                (parse-uri-template "{bar=wilma}")))
   (is (string= ""
@@ -110,9 +134,9 @@
                      (baz 1))
                  (parse-uri-template "http://www.foo.com/bar/{bar}{baz}"))))
   (with-fixture uri-template-syntax ()
-    (is (string= "http://www.foo.com/bar/1"
-                 (eval-read "(let ((baz 1))
-                                 #Uhttp://www.foo.com/bar/{baz})")))))
+    (is (string= "..wilma.1.wil.."
+                 (eval-read "(let (foo bar (baz 1) (qux \"wil\"))
+                                 #U.{foo}.{bar=wilma}.{baz}.{qux=wilma}.{flub}.)")))))
 
 
 (with-open-file (*standard-output* "test.output" :direction :output
