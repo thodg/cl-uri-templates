@@ -128,8 +128,9 @@
     :valid-result (lambda (result)
                     (check-uri (and (> (length result) 0)
                                        (alphanumericp (char result 0)))
-                            () "Invalid variable name : ~S. ~
-                                Variable names must start with alphanum."
+                            invalid-uri-error
+                            "Invalid variable name : ~S. ~
+                             Variable names must start with alphanum."
                             result)))
 
 
