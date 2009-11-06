@@ -41,7 +41,7 @@
 
 
 (defmacro define-reader (name &key allowed-char valid-next-char eat-next-char
-                         valid-result (condition-type invalid-expansion-error))
+                         valid-result (condition-type 'invalid-expansion-error))
   "Reads string from STREAM of characters satisfying ALLOWED-CHAR-SPEC.
    Next char in stream will satisfy VALID-NEXT-CHAR-SPEC and
    is eaten when EAT-NEXT-CHAR is non-nil.
