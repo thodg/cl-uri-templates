@@ -29,12 +29,8 @@
 (def-suite enabled-tests)
 
 
-(def-suite expansion-tests
-    :description "Test URI-Templates expansions."
-    :in enabled-tests)
-
-
-(in-suite expansion-tests)
+(def-suite expansions :in enabled-tests)
+(in-suite expansions)
 
 
 (define-fixture uri-template-syntax ()
@@ -79,6 +75,10 @@
     (signals (invalid-uri-warning) (eval-read "#U%gg"))))
 
 
+(def-suite variables :in expansions)
+(in-suite expansions)
+
+
 (define-fixture some-variables ()
   (let ((baz 1)
         (bar "bar"))
@@ -115,7 +115,7 @@
 
 
 (test variable-substitution
-  "Test variable expansion"
+  "Successful variable substitutions"
   (is (string= "fredfredfred"
                (let ((foo "fred"))
                  (parse-uri-template "{foo}{foo=}{foo=wilma}"))))
@@ -145,7 +145,27 @@
   (with-fixture uri-template-syntax ()
     (is (string= "..wilma.1.wil.."
                  (eval-read "(let (foo bar (baz 1) (qux \"wil\"))
-                                 #U.{foo}.{bar=wilma}.{baz}.{qux=wilma}.{flub}.)")))))
+                               #U.{foo}.{bar=wilma}.{baz}.{qux=wilma}.{flub}.)")))))
+
+
+(def-suite operators)
+(in-suite operators)
+
+
+(test -opt
+  "Operator -opt"
+  (is (string= ""
+               (parse-uri-template "{-opt||foo}{-opt|bar|foo}")))
+  (is (string= "..bar."
+               (let (foo (bar 1))
+                 (parse-uri-template ".{-opt||foo}.{-opt|bar|bar}."))))
+  (is (string= ".foo.bar."
+               (let ((foo ""))
+                 (parse-uri-template ".{-opt|foo|foo}.{-opt|bar|bar=1}."))))
+  (with-fixture uri-template-syntax ()
+    (is (string= "foo"
+                 (eval-read "(let (foo 1))
+                               #U.{-opt|foo|foo}")))))
 
 
 (with-open-file (*standard-output* "test.output" :direction :output
