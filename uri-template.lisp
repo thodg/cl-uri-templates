@@ -10,8 +10,6 @@
 (in-package #:cl-uri-templates)
 
 
-(defvar *encode-uri-string* t)
-
 (declaim (optimize (debug 3)))
 
 
@@ -32,6 +30,7 @@
 
 
 (define-condition invalid-op-error (invalid-expansion-error) ())
+(define-condition invalid-op-vars-error (invalid-expansion-error) ())
 (define-condition invalid-arg-error (invalid-expansion-error) ())
 (define-condition invalid-var-error (invalid-expansion-error) ())
 
@@ -99,22 +98,6 @@
        (defconstant ,name ,value))))
 
 
-(define-constant +uri-reserved-chars+ ";/?:@&=+$,")
-
-
-(defun uri-reserved-char-p (char)
-  (find char +uri-reserved-chars+))
-
-
-(define-constant +uri-mark-chars+ "-_.!~*'()")
-
-
-(defun uri-unreserved-char-p (char)
-  (declare (type character char))
-  (or (alphanumericp char)
-      (find char +uri-mark-chars+)))
-
-
 (define-reader read-arg
     :allowed-char (lambda (char)
                     (declare (type character char))
@@ -159,32 +142,35 @@
 (defun read-var (stream)
   (declare (type stream stream))
   (let* ((name (intern (string-upcase (read-varname stream)))))
-    `(or (ignore-errors ,name)
-         ,(if (eat-char stream #\=)
-              (read-vardefault stream)
-              ""))))
+    (if (eat-char stream #\=)
+        `(uri-template-var ,name
+                           ,(read-vardefault stream))
+        `(uri-template-var ,name))))
 
 
 (defun read-vars (stream)
   (declare (type stream stream))
   (loop
      for var = (read-var stream)
-     for next-char = (peek-char nil stream)
+     for next-char = (read-char stream)
      collect var
      while (char= #\, next-char)
-     finally (check-uri (char= #\} (read-char stream))
+     finally (check-uri (char= #\} next-char)
                         invalid-var-error
                         "Invalid URI expansion vars near ~S"
                         var)))
 
 
 (defun intern-op (name)
-  (let ((-name (concatenate 'string "-" (string-upcase name))))
-    (check-uri (find-symbol -name 'cl-uri-templates.operators)
+  (multiple-value-bind (symbol type)
+      (find-symbol (string-upcase name)
+                   'cl-uri-templates.operators)
+    (check-uri (and symbol
+                    (eq type :external))
                invalid-op-error
-               "~A is not a valid operator for URI-Templates"
-               -name)
-    (intern -name 'cl-uri-templates.operators)))
+               "~A is not a recognized operator for a URI-Template."
+               name)
+    symbol))
 
 
 (defun read-operator (stream)
@@ -192,16 +178,22 @@
   (check-uri (char= #\- (read-char stream))
              invalid-op-error
              "operator must start with '-'.")
-  (append (list (intern-op (read-op stream))
-                (read-arg stream))
-          (read-vars stream)))
+  (let ((op (intern-op (read-op stream)))
+        (arg (read-arg stream))
+        (vars (read-vars stream)))
+    (check-op-arity op (length vars))
+    (cons op (cons arg vars))))
 
 
 (defun read-expansion (stream)
   (declare (type stream stream))
   (if (char= #\- (peek-char nil stream))
       (read-operator stream)
-      (read-var stream)))
+      `(macrolet ((uri-template-var (var &optional (default ""))
+                    `(handler-case ,var
+                       (unbound-variable ()
+                         ,default))))
+         ,(read-var stream))))
 
 
 (defun read-uri-template (stream &optional recursive-p)
@@ -229,23 +221,24 @@
       (reverse token-accumulator))))
 
 
-(defmacro parse-uri-template (str)
+(defun parse-uri-template (str)
   (declare (type string str))
   (with-input-from-string (stream str)
-    (cons 'cl-uri-templates:uri-template
+    (cons 'uri-template
           (read-uri-template stream))))
 
 
-(defun maybe-uri-encode (x)
-  (if *encode-uri-string* (kmrcl:encode-uri-string (princ-to-string x)) x))
-
-
-#+parenscript (parenscript:defpsmacro maybe-uri-encode (x)
-                (if *encode-uri-string* `(encode-u-r-i-component ,x) x))
+(defmacro expand-uri-template (str)
+  (declare (type string str))
+  `(macrolet ((uri-template-var (var &optional default)
+                `(handler-case ,var
+                   (unbound-variable ()
+                     ,default))))
+     ,(parse-uri-template str)))
 
 
 (defun uri-template (&rest template-args)
-  (format nil "~{~A~}" template-args))
+  (format nil "~{~@[~A~]~}" template-args))
 
 
 #+parenscript (parenscript:defpsmacro uri-template (&rest template-args)
