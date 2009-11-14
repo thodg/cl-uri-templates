@@ -249,5 +249,9 @@
   (set-dispatch-macro-character #\# #\U
     (lambda (stream subchar arg)
       (declare (ignore subchar arg))
-      `(uri-template ,@(read-uri-template stream t))))
+      `(macrolet ((uri-template-var (var &optional default)
+                    `(handler-case ,var
+                       (unbound-variable ()
+                     ,default))))
+         (uri-template ,@(read-uri-template stream t)))))
   (values))
