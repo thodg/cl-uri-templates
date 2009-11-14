@@ -19,13 +19,20 @@
    #:invalid-uri-warning
    #:invalid-expansion-error
    #:invalid-op-error
+   #:invalid-op-vars-error
    #:invalid-arg-error
    #:invalid-var-error
 
-   ;; interpolation
+   ;; operators
+   #:define-operator
+
+   ;; parsing
    #:enable-uri-template-syntax
    #:read-uri-template
    #:parse-uri-template
+
+   ;; interpolation
+   #:expand-uri-template
    #:*encode-uri-string*
    
    ;; destructuring
@@ -48,11 +55,12 @@
 
 
 (defpackage #:cl-uri-templates.operators
-  (:use #:common-lisp #:cl-ppcre)
+  (:use #:cl)
+  (:import-from #:cl-uri-templates #:define-operator)
   (:export
-   #:-opt
-   #:-neg
-   #:-prefix
-   #:-suffix
-   #:-join
-   #:-list))
+   #:opt
+   #:neg
+   #:prefix
+   #:suffix
+   #:join
+   #:list))
