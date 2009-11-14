@@ -2,8 +2,5 @@
 
 rm *.fasl
 mv test.output test.output~
-echo "
-(require 'asdf)
-(require 'cl-uri-templates.test)" | \
-    sbcl && \
-    less test.output
+sbcl --script test.lisp && \
+    cat test.output
