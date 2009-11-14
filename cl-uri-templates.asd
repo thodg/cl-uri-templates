@@ -18,7 +18,8 @@
   :version "0.6"
   :serial t
   :components ((:file "defpackage")
+               (:file "uri")
                (:file "uri-template")
                (:file "operators")
                (:file "destructure-uri"))
-  :depends-on (:kmrcl :cl-ppcre))
+  :depends-on (#:trivial-utf-8 #:cl-ppcre))
