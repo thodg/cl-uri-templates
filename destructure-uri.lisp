@@ -95,6 +95,6 @@ of the given URI."
                ,uri-var)
            ,(when *decode-uri-string*
                   `(setf ,@(mapcan (lambda (var)
-                                     `(,var (kmrcl:decode-uri-string ,var)))
+                                     `(,var (uri-decode ,var)))
                                    template-vars)))
            ,@body)))))
