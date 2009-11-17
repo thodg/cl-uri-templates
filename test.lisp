@@ -167,9 +167,9 @@
                  (expand-uri-template ".{-opt|foo|foo}.{-opt|bar|bar=1}."))))
   (signals invalid-op-vars-error (parse-uri-template "{-opt||foo,bar}"))
   (with-fixture uri-template-syntax ()
-    (is (string= "foo"
+    (is (string= ".foo."
                  (eval-read "(let ((foo 1))
-                               #U.{-opt|foo|foo})")))))
+                               #U.{-opt|foo|foo}.)")))))
 
 
 (test operator-neg
@@ -188,7 +188,100 @@
   (with-fixture uri-template-syntax ()
     (is (string= "..bar."
                  (eval-read "(let ((foo 1))
-                               #U.{-neg|foo|foo}.{-neg|bar|bar})")))))
+                               #U.{-neg|foo|foo}.{-neg|bar|bar}.)")))))
+
+
+(test operator-prefix
+  "Operator -prefix"
+  (is (string= "..bar."
+               (expand-uri-template ".{-prefix||foo}.{-prefix|bar|foo}.")))
+  (is (string= ".foo.bar."
+               (expand-uri-template ".{-prefix|foo|foo}.{-prefix|bar|bar=}.")))
+  (is (string= ".a.bar1."
+               (let (foo (bar 1))
+                 (expand-uri-template ".{-prefix|a|foo}.{-prefix|bar|bar}."))))
+  (is (string= "./.+1."
+               (let ((foo ""))
+                 (expand-uri-template ".{-prefix|/|foo}.{-prefix|+|bar=1}."))))
+  (is (string= ".abcd123.+a+b+c+d+1+2++3."
+               (let ((foo '("a" "b" "c" "d" 1 2 nil 3)))
+                 (expand-uri-template ".{-prefix||foo}.{-prefix|+|foo=1}."))))
+  (signals invalid-var-error (parse-uri-template "{-prefix||}"))
+  (signals invalid-op-vars-error (parse-uri-template "{-prefix||foo,bar}"))
+  (with-fixture uri-template-syntax ()
+    (is (string= ".foo1.bar"
+                 (eval-read "(let ((foo 1))
+                               #U.{-prefix|foo|foo}.{-prefix|bar|bar})")))))
+
+
+(test operator-suffix
+  "Operator -suffix"
+  (is (string= "..bar."
+               (expand-uri-template ".{-suffix||foo}.{-suffix|bar|foo}.")))
+  (is (string= ".foo.bar."
+               (expand-uri-template ".{-suffix|foo|foo}.{-suffix|bar|bar=}.")))
+  (is (string= "..1bar."
+               (let (foo (bar 1))
+                 (expand-uri-template ".{-suffix||foo}.{-suffix|bar|bar}."))))
+  (is (string= "./.1+."
+               (let ((foo ""))
+                 (expand-uri-template ".{-suffix|/|foo}.{-suffix|+|bar=1}."))))
+  (is (string= ".abcd123.a+b+c+d+1+2++3+."
+               (let ((foo '("a" "b" "c" "d" 1 2 nil 3)))
+                 (expand-uri-template ".{-suffix||foo}.{-suffix|+|foo=1}."))))
+  (signals invalid-var-error (parse-uri-template "{-suffix||}"))
+  (signals invalid-op-vars-error (parse-uri-template "{-suffix||foo,bar}"))
+  (with-fixture uri-template-syntax ()
+    (is (string= ".1foo.bar."
+                 (eval-read "(let ((foo 1))
+                               #U.{-suffix|foo|foo}.{-suffix|bar|bar}.)")))))
+
+
+(test operator-join
+  "Operator -join"
+  (is (string= "..."
+               (expand-uri-template ".{-join||foo}.{-join|bar|foo}.")))
+  (is (string= "..."
+               (expand-uri-template ".{-join|foo|foo}.{-join|bar|bar=}.")))
+  (is (string= "..1."
+               (let (foo (bar 1))
+                 (expand-uri-template ".{-join||foo}.{-join|bar|bar}."))))
+  (is (string= "./.+1."
+               (let ((foo ""))
+                 (expand-uri-template ".{-join|/|foo,bar}.{-join|+|foo,bar=1}."))))
+  (is (string= "abd123"
+               (let ((a "a") (b "b") (d "d") (e 1) (f 2))
+                 (expand-uri-template "{-join||a,b,c,d,e,f,g=3}"))))
+  (is (string= "a+b+c+d+1+2+3"
+               (let ((a "a") (b "b") (d "d") (e 1) (f 2) (g 3))
+                 (expand-uri-template "{-join|+|a,b,c=c,d=1,e,f,g}"))))
+  (signals invalid-var-error (parse-uri-template "{-join||}"))
+  (with-fixture uri-template-syntax ()
+    (is (string= ".1.1+++b"
+                 (eval-read "(let ((foo 1))
+                               #U.{-join|foo|foo}.{-join|+++|foo,bar=b})")))))
+
+
+(test operator-list
+  "Operator -list"
+  (is (string= "..."
+               (expand-uri-template ".{-list||foo}.{-list|bar|foo}.")))
+  (is (string= "..1."
+               (let (foo (bar '(1)))
+                 (expand-uri-template ".{-list||foo}.{-list|bar|bar}."))))
+  (is (string= "./.++1+2."
+               (let ((foo '(nil nil)) (bar '(nil "" 1 2)))
+                 (expand-uri-template ".{-list|/|foo}.{-list|+|bar}."))))
+  (is (string= ".abcd.a+b+c+d."
+               (let ((foo '("a" "b" "c" "d")))
+                 (expand-uri-template ".{-list||foo}.{-list|+|foo}."))))
+  (signals invalid-var-error (parse-uri-template "{-list||}"))
+  (signals invalid-op-vars-error (expand-uri-template
+                                  ".{-list|foo|foo}.{-list|bar|bar=}."))
+  (with-fixture uri-template-syntax ()
+    (is (string= ".1.1,+++,b"
+                 (eval-read "(let ((foo '(1)) (bar '(1 +++ #\\b)))
+                               #U.{-list|foo|foo}.{-list|,|bar})")))))
 
 
 (with-open-file (*standard-output* "test.output" :direction :output

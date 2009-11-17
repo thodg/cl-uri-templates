@@ -163,7 +163,7 @@
 
 (defun intern-op (name)
   (multiple-value-bind (symbol type)
-      (find-symbol (string-upcase name)
+      (find-symbol (concatenate 'string "-" (string-upcase name))
                    'cl-uri-templates.operators)
     (check-uri (and symbol
                     (eq type :external))

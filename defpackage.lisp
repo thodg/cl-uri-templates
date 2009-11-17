@@ -58,9 +58,9 @@
   (:use #:cl)
   (:import-from #:cl-uri-templates #:define-operator)
   (:export
-   #:opt
-   #:neg
-   #:prefix
-   #:suffix
-   #:join
-   #:list))
+   #:-opt
+   #:-neg
+   #:-prefix
+   #:-suffix
+   #:-join
+   #:-list))

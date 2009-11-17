@@ -51,15 +51,52 @@
 (in-package :cl-uri-templates.operators)
 
 
-(define-operator opt (arg var)
+(define-operator -opt (arg var)
   (declare (type string arg))
   (if var
       arg
       ""))
 
 
-(define-operator neg (arg var)
+(define-operator -neg (arg var)
   (declare (type string arg))
   (if var
       ""
       arg))
+
+
+(define-operator -prefix (arg var)
+  (if (consp var)
+      (apply #'concatenate 'string (loop
+                                      for v in var
+                                      collect arg
+                                      collect (princ-to-string (or v ""))))
+      (concatenate 'string arg (princ-to-string (or var "")))))
+
+
+(define-operator -suffix (arg var)
+  (if (consp var)
+      (apply #'concatenate 'string (loop
+                                      for v in var
+                                      collect (princ-to-string (or v ""))
+                                      collect arg))
+      (concatenate 'string (princ-to-string (or var "")) arg)))
+
+
+(define-operator -join (arg &rest vars)
+  (apply #'concatenate 'string (loop
+                                  for v in vars
+                                  for sep = "" then arg
+                                  collect sep
+                                  collect (princ-to-string (or v "")))))
+
+
+(define-operator -list (arg var)
+  (assert (typep var 'list)
+          () 'cl-uri-templates:invalid-op-vars-error
+          "Operator -list only accepts a variable containing a list.")
+  (apply #'concatenate 'string (loop
+                                  for v in var
+                                  for sep = "" then arg
+                                  collect sep
+                                  collect (princ-to-string (or v "")))))
