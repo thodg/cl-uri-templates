@@ -44,59 +44,73 @@
   `(progn
      (setf (gethash ',name *arity-p-of*)
            (lambda-list-arity-p ,arguments))
-     (defun ,name ,(cons arg arguments)
+     (defmacro ,name ,(cons arg arguments)
        ,@body)))
 
 
 (in-package :cl-uri-templates.operators)
 
 
-(define-operator -opt (arg var)
-  (declare (type string arg))
-  (if var
-      arg
-      ""))
+(define-operator -opt (argument variable)
+  `(if ,variable
+       ,argument
+       ""))
 
 
-(define-operator -neg (arg var)
-  (declare (type string arg))
-  (if var
-      ""
-      arg))
+(define-operator -neg (argument variable)
+  `(if ,variable
+       ""
+       ,argument))
 
 
-(define-operator -prefix (arg var)
-  (if (consp var)
-      (apply #'concatenate 'string (loop
-                                      for v in var
-                                      collect arg
-                                      collect (princ-to-string (or v ""))))
-      (concatenate 'string arg (princ-to-string (or var "")))))
+(define-operator -prefix (argument variable)
+  `(let ((var ,variable))
+     (if (consp var)
+         (apply #'concatenate 'string (loop
+                                         for v in var
+                                         collect ,argument
+                                         collect (princ-to-string (or v ""))))
+         (concatenate 'string ,argument (princ-to-string (or var ""))))))
 
 
-(define-operator -suffix (arg var)
-  (if (consp var)
-      (apply #'concatenate 'string (loop
-                                      for v in var
-                                      collect (princ-to-string (or v ""))
-                                      collect arg))
-      (concatenate 'string (princ-to-string (or var "")) arg)))
+(define-operator -suffix (argument variable)
+  `(let ((var ,variable))
+     (if (consp var)
+         (apply #'concatenate 'string (loop
+                                         for v in ,variable
+                                         collect (princ-to-string (or v ""))
+                                         collect ,argument))
+         (concatenate 'string (princ-to-string (or var "")) ,argument))))
 
 
-(define-operator -join (arg &rest vars)
-  (apply #'concatenate 'string (loop
-                                  for v in vars
-                                  for sep = "" then arg
-                                  collect sep
-                                  collect (princ-to-string (or v "")))))
+(define-operator -join (argument &rest variables)
+  `(macrolet
+       ((cl-uri-templates::uri-template-var (var &optional (default ""))
+          `(cons ,(string-downcase (symbol-name var))
+                 (handler-case ,var
+                   (unbound-variable ()
+                     ,default)))))
+     (apply #'concatenate 'string (loop
+                                     for var in (list ,@variables)
+                                     for sep = "" then ,argument
+                                     for (name . value) = var
+                                     collect sep
+                                     collect name
+                                     collect "="
+                                     collect (princ-to-string
+                                              (or value ""))))))
 
+#+nil(-join "/"
+            (cl-uri-templates::uri-template-var a)
+            (cl-uri-templates::uri-template-var b))
 
-(define-operator -list (arg var)
-  (assert (typep var 'list)
-          () 'cl-uri-templates:invalid-op-vars-error
-          "Operator -list only accepts a variable containing a list.")
-  (apply #'concatenate 'string (loop
-                                  for v in var
-                                  for sep = "" then arg
-                                  collect sep
-                                  collect (princ-to-string (or v "")))))
+(define-operator -list (argument variable)
+  `(let ((var ,variable))
+     (assert (typep var 'list)
+             () 'cl-uri-templates:invalid-op-vars-error
+             "Operator -list only accepts a variable containing a list.")
+     (apply #'concatenate 'string (loop
+                                     for v in var
+                                     for sep = "" then ,argument
+                                     collect sep
+                                     collect (princ-to-string (or v ""))))))

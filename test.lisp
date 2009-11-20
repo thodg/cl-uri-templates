@@ -239,25 +239,25 @@
 
 (test operator-join
   "Operator -join"
-  (is (string= "..."
+  (is (string= ".foo=.foo=."
                (expand-uri-template ".{-join||foo}.{-join|bar|foo}.")))
-  (is (string= "..."
-               (expand-uri-template ".{-join|foo|foo}.{-join|bar|bar=}.")))
-  (is (string= "..1."
+  (is (string= ".foo=&bar=."
+               (expand-uri-template ".{-join|&|foo,bar=}.")))
+  (is (string= ".foo=&bar=1."
                (let (foo (bar 1))
-                 (expand-uri-template ".{-join||foo}.{-join|bar|bar}."))))
-  (is (string= "./.+1."
+                 (expand-uri-template ".{-join|&|foo,bar}."))))
+  (is (string= ".foo=/bar=.foo=+bar=1."
                (let ((foo ""))
                  (expand-uri-template ".{-join|/|foo,bar}.{-join|+|foo,bar=1}."))))
-  (is (string= "abd123"
+  (is (string= "a=a,b=b,c=,d=d,e=1,f=2,g=3"
                (let ((a "a") (b "b") (d "d") (e 1) (f 2))
-                 (expand-uri-template "{-join||a,b,c,d,e,f,g=3}"))))
-  (is (string= "a+b+c+d+1+2+3"
+                 (expand-uri-template "{-join|,|a,b,c,d,e,f,g=3}"))))
+  (is (string= "a=a&b=b&c=c&d=d&e=1&f=2&g=3"
                (let ((a "a") (b "b") (d "d") (e 1) (f 2) (g 3))
-                 (expand-uri-template "{-join|+|a,b,c=c,d=1,e,f,g}"))))
+                 (expand-uri-template "{-join|&|a,b,c=c,d=1,e,f,g}"))))
   (signals invalid-var-error (parse-uri-template "{-join||}"))
   (with-fixture uri-template-syntax ()
-    (is (string= ".1.1+++b"
+    (is (string= ".foo=1.foo=1+++bar=b"
                  (eval-read "(let ((foo 1))
                                #U.{-join|foo|foo}.{-join|+++|foo,bar=b})")))))
 
