@@ -13,7 +13,7 @@ PROGRESS
 --------
 
 All expansions, operators and variable substitution work fine.
-Destructuring URIs using operators is undeer development.
+Destructuring URIs using operators is under development.
 
 Please report any bug you encounter, test cases and patches are also
 highly appreciated.
