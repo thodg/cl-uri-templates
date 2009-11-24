@@ -9,20 +9,11 @@ It is currently developped by Thomas de Grivel <billitch@gmail.com>
 at http://github.com/billitch/cl-uri-templates .
 
 
-FORK
-----
-
-This package is a fork from uri-template written by Vladimir Sedach.
-
-My goal is to contribute the missing operator parsers, and
-further extend the URI deconstruction with these same operators.
-
-
 PROGRESS
 --------
 
-Although operators are missing, variable substitution works fine
-for interpolation and destructuring URIs.
+All expansions, operators and variable substitution work fine.
+Destructuring URIs using operators is undeer development.
 
 Please report any bug you encounter, test cases and patches are also
 highly appreciated.
@@ -37,6 +28,15 @@ http://bitworking.org/projects/URI-Templates/
 
 For more information about the original uri-template package by
 Vladimir Sedach, see http://common-lisp.net/project/uri-template/ .
+
+
+FORK
+----
+
+This package is a fork from uri-template written by Vladimir Sedach.
+
+My goal is to contribute the missing operator parsers, and
+further extend the URI deconstruction with these same operators.
 
 
 LICENSE
