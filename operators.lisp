@@ -48,22 +48,19 @@
        ,@body)))
 
 
-(in-package :cl-uri-templates.operators)
-
-
-(define-operator -opt (argument variable)
+(define-operator cl-uri-templates.operators:-opt (argument variable)
   `(if ,variable
        ,argument
        ""))
 
 
-(define-operator -neg (argument variable)
+(define-operator cl-uri-templates.operators:-neg (argument variable)
   `(if ,variable
        ""
        ,argument))
 
 
-(define-operator -prefix (argument variable)
+(define-operator cl-uri-templates.operators:-prefix (argument variable)
   `(let ((var ,variable))
      (if (consp var)
          (apply #'concatenate 'string (loop
@@ -73,7 +70,7 @@
          (concatenate 'string ,argument (princ-to-string (or var ""))))))
 
 
-(define-operator -suffix (argument variable)
+(define-operator cl-uri-templates.operators:-suffix (argument variable)
   `(let ((var ,variable))
      (if (consp var)
          (apply #'concatenate 'string (loop
@@ -83,7 +80,7 @@
          (concatenate 'string (princ-to-string (or var "")) ,argument))))
 
 
-(define-operator -join (argument &rest variables)
+(define-operator cl-uri-templates.operators:-join (argument &rest variables)
   `(macrolet
        ((cl-uri-templates::uri-template-var (var &optional (default ""))
           `(cons ,(string-downcase (symbol-name var))
@@ -104,7 +101,7 @@
             (cl-uri-templates::uri-template-var a)
             (cl-uri-templates::uri-template-var b))
 
-(define-operator -list (argument variable)
+(define-operator cl-uri-templates.operators:-list (argument variable)
   `(let ((var ,variable))
      (assert (typep var 'list)
              () 'cl-uri-templates:invalid-op-vars-error

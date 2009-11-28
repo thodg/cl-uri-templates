@@ -56,7 +56,6 @@
 
 (defpackage #:cl-uri-templates.operators
   (:use #:cl)
-  (:import-from #:cl-uri-templates #:define-operator)
   (:export
    #:-opt
    #:-neg
