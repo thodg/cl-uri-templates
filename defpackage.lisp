@@ -26,6 +26,11 @@
    ;; operators
    #:define-operator
 
+   ;; environment
+   #:with-uri-environment
+   #:uri-var
+   #:with-uri-variables
+
    ;; parsing
    #:enable-uri-template-syntax
    #:read-uri-template

@@ -149,15 +149,6 @@ of the given URI."
   (uri-template-to-scanner (parse-uri-template template)))
 
 
-(defvar *uri-environment*)
-
-(defun uri-var (name)
-  (getf *uri-environment* name))
-
-(defsetf uri-var (name) (value)
-  `(setf (getf *uri-environment* ,name) ,value))
-
-
 (defgeneric destructure-uri (uri template))
 
 (defmethod destructure-uri (uri (template uri-scanner))
@@ -175,13 +166,8 @@ of the given URI."
 (defmethod destructure-uri (uri (template string))
   (destructure-uri uri (uri-template-to-scanner template)))
 
-(defmacro with-destructured-uri (uri template (&rest vars) &body body)
-  `(let (*uri-environment*)
+(defmacro with-destructured-uri (uri template variables &body body)
+  `(with-uri-environment
      (destructure-uri ,uri ,template)
-     (symbol-macrolet ,(loop
-                          for var in vars
-                          collect `(,var (uri-var ',var)))
+     (with-uri-variables ,variables
        ,@body)))
-
-(let (*uri-environment*)
-  (destructure-uri "afoobbarc" "a{foo}b{bar}c")) 

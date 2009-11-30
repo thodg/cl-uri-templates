@@ -19,6 +19,7 @@
   :serial t
   :components ((:file "defpackage")
                (:file "uri")
+               (:file "uri-environment")
                (:file "uri-template")
                (:file "operators")
                (:file "destructure-uri"))

@@ -322,12 +322,6 @@
                (list foo bar)))))
 
 
-
-(let (*uri-environment*)
-  (destructure-uri "fooBaAaRbaz" "foo{bar}baz")
-  (uri-var 'bar))
-
-
 (with-open-file (*standard-output* "test.output" :direction :output
                                    :if-exists :supersede)
   (time (run! 'enabled-tests)))
