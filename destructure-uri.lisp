@@ -98,3 +98,90 @@ of the given URI."
                                      `(,var (uri-decode ,var)))
                                    template-vars)))
            ,@body)))))
+
+
+(defstruct uri-scanner function variables)
+
+(defvar *variables*)
+
+
+(defgeneric uri-compound-form-to-parse-tree (symbol arguments))
+
+(defmethod uri-compound-form-to-parse-tree ((fun-name (eql 'uri-template-var))
+                                            (arguments list))
+  (declare (ignore fun-name))
+  (destructuring-bind (var-name &optional var-default) arguments
+    (push (list var-name var-default) *variables*)
+    '(:register (:non-greedy-repetition 0 nil :everything))))
+
+(defmethod uri-compound-form-to-parse-tree ((fun-name (eql '-opt))
+                                            (arguments list))
+  (declare (ignore fun-name))
+  (destructuring-bind (arg (var-fun var-name &optional var-default)) arguments
+    (assert (eq var-fun 'uri-template-var))
+    '(:register (:non-greedy-repetition 0 nil :everything))))
+
+
+(defgeneric uri-form-to-parse-tree (form))
+
+(defmethod uri-form-to-parse-tree ((form cons))
+  (uri-compound-form-to-parse-tree (first form) (rest form)))
+
+(defmethod uri-form-to-parse-tree ((form string))
+  form)
+
+
+(defgeneric uri-template-to-scanner (template))
+
+(defmethod uri-template-to-scanner ((template-form cons))
+  (assert (eql (first template-form) 'uri-template))
+  (let* (*variables*
+         (parse-tree `(:sequence
+                       :start-anchor
+                       ,@(mapcar #'uri-form-to-parse-tree
+                                 (rest template-form))
+                       :end-anchor)))
+    ;;(format t "Vars: ~S~%Parse tree : ~S~%" *variables* parse-tree)
+    (make-uri-scanner :function (cl-ppcre:create-scanner parse-tree)
+                      :variables (reverse *variables*))))
+
+(defmethod uri-template-to-scanner ((template string))
+  (uri-template-to-scanner (parse-uri-template template)))
+
+
+(defvar *uri-environment*)
+
+(defun uri-var (name)
+  (getf *uri-environment* name))
+
+(defsetf uri-var (name) (value)
+  `(setf (getf *uri-environment* ,name) ,value))
+
+
+(defgeneric destructure-uri (uri template))
+
+(defmethod destructure-uri (uri (template uri-scanner))
+  (loop
+     for var in (uri-scanner-variables template)
+     for var-name = (car var)
+     with regs = (nth-value 1 (cl-ppcre:scan-to-strings
+                               (uri-scanner-function template)
+                               uri))
+     for i below (length regs)
+     for reg = (aref regs i)
+     do (setf (uri-var var-name) reg))
+  *uri-environment*)
+
+(defmethod destructure-uri (uri (template string))
+  (destructure-uri uri (uri-template-to-scanner template)))
+
+(defmacro with-destructured-uri (uri template (&rest vars) &body body)
+  `(let (*uri-environment*)
+     (destructure-uri ,uri ,template)
+     (symbol-macrolet ,(loop
+                          for var in vars
+                          collect `(,var (uri-var ',var)))
+       ,@body)))
+
+(let (*uri-environment*)
+  (destructure-uri "afoobbarc" "a{foo}b{bar}c")) 

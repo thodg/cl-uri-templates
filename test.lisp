@@ -284,6 +284,43 @@
                                #U.{-list|foo|foo}.{-list|,|bar})")))))
 
 
+(def-suite destructuring :in enabled-tests)
+(in-suite destructuring)
+
+
+(test destructuring-vars
+  "Destructuring variables"
+  (is (string= ""
+               (with-destructured-uri "" "{foo}" ()
+                 (uri-var 'foo))))
+  (is (string= ""
+               (with-destructured-uri "" "{foo=bar}" (foo)
+                 foo)))
+  (is (string= "fOo"
+               (with-destructured-uri "fOo" "{foo}" ()
+                 (uri-var 'foo))))
+  (is (string= "fOo"
+               (with-destructured-uri ".fOo" ".{foo}" ()
+                 (uri-var 'foo))))
+  (is (string= "fOo"
+               (with-destructured-uri "fOo." "{foo}." ()
+                 (uri-var 'foo))))
+  (is (string= "BaAr"
+               (with-destructured-uri "fooBaArbaz" "foo{bar}baz" (bar)
+                 bar)))
+  (is (equal '("BaAr" "bAz")
+             (with-destructured-uri "fooBaAr/bAz" "foo{bar}/{baz}" (bar baz)
+               (list bar baz))))
+  (is (equal '("BaAr" "bAz")
+             (with-destructured-uri "fooBaAr/bAz" "foo{bar}/{baz}" ()
+               (mapcar #'uri-var '(bar baz))))))
+
+
+(let (*uri-environment*)
+  (destructure-uri "fooBaAaRbaz" "foo{bar}baz")
+  (uri-var 'bar))
+
+
 (with-open-file (*standard-output* "test.output" :direction :output
                                    :if-exists :supersede)
   (time (run! 'enabled-tests)))

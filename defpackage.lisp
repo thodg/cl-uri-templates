@@ -36,6 +36,11 @@
    #:*encode-uri-string*
    
    ;; destructuring
+   #:*uri-environment*
+   #:uri-var
+   #:destructure-uri
+   #:with-destructured-uri
+
    #:*decode-uri-string*
    #:uri-template-bind
    #:bind-standard-uri-components
