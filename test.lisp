@@ -296,6 +296,9 @@
   (is (string= ""
                (with-destructured-uri "" "{foo=bar}" (foo)
                  foo)))
+  (is (string= ""
+               (with-destructured-uri "" "{foo}{bar}" (foo bar)
+                 foo)))
   (is (string= "fOo"
                (with-destructured-uri "fOo" "{foo}" ()
                  (uri-var 'foo))))
@@ -313,7 +316,11 @@
                (list bar baz))))
   (is (equal '("BaAr" "bAz")
              (with-destructured-uri "fooBaAr/bAz" "foo{bar}/{baz}" ()
-               (mapcar #'uri-var '(bar baz))))))
+               (mapcar #'uri-var '(bar baz)))))
+  (is (equal '("" "foobar")
+             (with-destructured-uri "foobar" "{foo}{bar}" (foo bar)
+               (list foo bar)))))
+
 
 
 (let (*uri-environment*)
