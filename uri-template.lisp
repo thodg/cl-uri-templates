@@ -189,11 +189,7 @@
   (declare (type stream stream))
   (if (char= #\- (peek-char nil stream))
       (read-operator stream)
-      `(macrolet ((uri-template-var (var &optional (default ""))
-                    `(handler-case ,var
-                       (unbound-variable ()
-                         ,default))))
-         ,(read-var stream))))
+      (read-var stream)))
 
 
 (defun read-uri-template (stream &optional recursive-p)
