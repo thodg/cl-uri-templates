@@ -16,7 +16,8 @@
      ,@body))
 
 (defun uri-var (name)
-  (getf *uri-environment* name))
+  (ignore-errors
+    (getf *uri-environment* name)))
 
 (defsetf uri-var (name) (value)
   `(setf (getf *uri-environment* ,name) ,value))

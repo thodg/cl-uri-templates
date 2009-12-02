@@ -84,9 +84,7 @@
   `(macrolet
        ((cl-uri-templates::uri-template-var (var &optional (default ""))
           `(cons ,(string-downcase (symbol-name var))
-                 (handler-case ,var
-                   (unbound-variable ()
-                     ,default)))))
+                 (expand-uri-template-var ,var ,default))))
      (apply #'concatenate 'string (loop
                                      for var in (list ,@variables)
                                      for sep = "" then ,argument

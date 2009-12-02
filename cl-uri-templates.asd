@@ -21,6 +21,7 @@
                (:file "uri")
                (:file "uri-environment")
                (:file "uri-template")
+               (:file "expansion")
                (:file "operators")
                (:file "destructure-uri"))
   :depends-on (#:trivial-utf-8 #:cl-ppcre))

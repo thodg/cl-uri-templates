@@ -322,6 +322,33 @@
                (list foo bar)))))
 
 
+(def-suite run-time :in enabled-tests)
+(in-suite run-time)
+
+
+(test run-time-expansion
+  "Expansions with run-time variables"
+  (is (equal ""
+             (with-destructured-uri "" "{foo}" ()
+               (expand-uri-template "{foo}"))))
+  (is (equal "foo"
+             (with-destructured-uri "foo" "{foo}" ()
+               (expand-uri-template "{foo}"))))
+  (is (equal "foo+bar"
+             (with-destructured-uri "foo-bar" "{foo}-{bar}" ()
+               (expand-uri-template "{foo}+{bar}"))))
+  (is (equal "?foo=a&bar=b"
+             (with-destructured-uri "a/b" "{foo}/{bar}" (foo bar)
+               (expand-uri-template "?{-join|&|foo,bar}"))))
+  (is (equal "?foo=a&bar=b"
+             (with-destructured-uri "a/b" "{foo}/{bar}" ()
+               (expand-uri-template "?{-join|&|foo,bar}"))))
+  (is (equal "foo"
+             (let ((foo 2))
+               (with-destructured-uri "foo" "{foo}" ()
+                 (expand-uri-template "{foo}"))))))
+
+
 (with-open-file (*standard-output* "test.output" :direction :output
                                    :if-exists :supersede)
   (time (run! 'enabled-tests)))

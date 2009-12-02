@@ -13,6 +13,11 @@
 (declaim (optimize (debug 3)))
 
 
+(deftype uri-template ()
+  '(or string
+    (cons (eql 'uri-template) list)))
+
+
 (define-condition invalid-uri-warning (warning)
   ((message :initarg :message
             :initform "Invalid URI"
@@ -217,30 +222,6 @@
       (reverse token-accumulator))))
 
 
-(defun parse-uri-template (str)
-  (declare (type string str))
-  (with-input-from-string (stream str)
-    (cons 'uri-template
-          (read-uri-template stream))))
-
-
-(defmacro expand-uri-template (str)
-  (declare (type string str))
-  `(macrolet ((uri-template-var (var &optional default)
-                `(handler-case ,var
-                   (unbound-variable ()
-                     ,default))))
-     ,(parse-uri-template str)))
-
-
-(defun uri-template (&rest template-args)
-  (format nil "~{~@[~A~]~}" template-args))
-
-
-#+parenscript (parenscript:defpsmacro uri-template (&rest template-args)
-                `(+ ,@template-args))
-
-
 (defun enable-uri-template-syntax ()
   (set-dispatch-macro-character #\# #\U
     (lambda (stream subchar arg)
@@ -251,3 +232,10 @@
                      ,default))))
          (uri-template ,@(read-uri-template stream t)))))
   (values))
+
+
+(defun parse-uri-template (str)
+  (declare (type string str))
+  (with-input-from-string (stream str)
+    (cons 'uri-template
+          (read-uri-template stream))))
