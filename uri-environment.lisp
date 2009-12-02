@@ -27,3 +27,9 @@
                         for var in variables
                         collect `(,var (uri-var ',var)))
      ,@body))
+
+(defmacro uri-variables-setq (&rest variables)
+  "This macro sets values of bound variables from uri environment"
+  (loop
+     for var in variables
+     collect `(setq ,var (uri-var ',var))))

@@ -27,9 +27,11 @@
    #:define-operator
 
    ;; environment
+   #:*uri-environment*
    #:with-uri-environment
    #:uri-var
    #:with-uri-variables
+   #:uri-variables-setq
 
    ;; parsing
    #:enable-uri-template-syntax
@@ -41,7 +43,6 @@
    #:*encode-uri-string*
    
    ;; destructuring
-   #:*uri-environment*
    #:uri-var
    #:destructure-uri
    #:with-destructured-uri
