@@ -26,9 +26,9 @@ can bind *URI-ENVIRONMENT* and use DESTRUCTURE-URI to populate it.
 When writing URI templates please note that some expansions do not
 have reciprocal deconstructions, for instance
 
- (equal '("" "foobar")
-        (with-destructured-uri "foobar" "{foo}{bar}" (foo bar)
-           (list foo bar)))
+    (equal '("" "foobar")
+           (with-destructured-uri "foobar" "{foo}{bar}" (foo bar)
+              (list foo bar)))
 
 
 PROGRESS
