@@ -208,8 +208,8 @@
                      token-accumulator)
                (setf string-accumulator ()))))
       (loop
-         for next-char = (read-char stream nil #\Space recursive-p)
-         until (member next-char '(#\Space \#Tab #\Newline #\)))
+         for next-char = (read-char stream nil nil recursive-p)
+         until (member next-char '(nil #\Space \#Tab #\Newline #\)))
          do (case next-char  
               (#\{ (collect-string)
                    (push (read-expansion stream)
@@ -217,7 +217,8 @@
               (#\})
               (t (push next-char string-accumulator)))
          finally
-           (unread-char next-char stream)
+           (if next-char
+               (unread-char next-char stream))
            (collect-string))
       (reverse token-accumulator))))
 
